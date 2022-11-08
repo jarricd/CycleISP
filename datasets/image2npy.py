@@ -8,7 +8,7 @@ import numpy as np
 import rawpy
 from glob import glob
 from tqdm import tqdm
-import lycon
+import cv2
 from natsort import natsorted
 
 from joblib import Parallel, delayed
@@ -48,7 +48,7 @@ def raw2npy(inp_path):
 def jpg2npy(inp_path):
     filename = os.path.splitext(os.path.split(inp_path)[-1])[0] + '.npy'
     filepath = os.path.join(output_dir,filename)
-    jpg = lycon.load(inp_path)
+    jpg = cv2.imread(inp_path)
     im_jpg = jpg.astype(np.float16)
      # normalize values in range [0,1]
     norm_factor = 255

@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from skimage.measure.simple_metrics import compare_psnr
 import pickle
-import lycon
+import cv2
 from skimage.measure import compare_ssim
 
 
@@ -37,7 +37,7 @@ def load_npy(filepath):
     return img
 
 def load_img(filepath):
-    img = lycon.load(filepath)
+    img = cv2.imread(filepath)
     img = img.astype(np.float32)
     img = img/255.
     return img

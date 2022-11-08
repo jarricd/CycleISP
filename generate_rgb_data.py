@@ -20,7 +20,7 @@ from networks.cycleisp import Rgb2Raw, Raw2Rgb, CCM
 from dataloaders.data_rgb import get_rgb_data
 from utils.noise_sampling import random_noise_levels_dnd, random_noise_levels_sidd, add_noise
 import utils
-import lycon
+import cv2
 from skimage import img_as_ubyte
 
 parser = argparse.ArgumentParser(description='From clean RGB images, generate {RGB_clean, RGB_noisy} pairs')
@@ -97,5 +97,5 @@ with torch.no_grad():
             rgb_clean = rgb_clean[padh[j]:-padh[j],padw[j]:-padw[j],:]   
             rgb_noisy = rgb_noisy[padh[j]:-padh[j],padw[j]:-padw[j],:]   
 
-            lycon.save(args.result_dir+'clean/'+filename[:-4]+'.png',img_as_ubyte(rgb_clean))
-            lycon.save(args.result_dir+'noisy/'+filename[:-4]+'.png',img_as_ubyte(rgb_noisy))
+            cv2.imwrite(args.result_dir+'clean/'+filename[:-4]+'.png',img_as_ubyte(rgb_clean))
+            cv2.imwrite(args.result_dir+'noisy/'+filename[:-4]+'.png',img_as_ubyte(rgb_noisy))

@@ -14,13 +14,13 @@ import torch.nn as nn
 import torch
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
-
+import cv2
 import scipy.io as sio
 from networks.denoising_raw import DenoiseNet
 from dataloaders.data_raw import get_validation_data 
 
 import utils
-import lycon
+
 from skimage import img_as_ubyte
 
 parser = argparse.ArgumentParser(description='RAW denoising evaluation on the validation set of SIDD')
@@ -70,7 +70,7 @@ with torch.no_grad():
                 denoised_img = utils.unpack_raw(raw_restored[batch,:,:,:].unsqueeze(0))
                 denoised_img = denoised_img.permute(0, 2, 3, 1).cpu().detach().numpy()[0]
                 denoised_img = np.squeeze(np.stack((denoised_img,) * 3, -1))
-                lycon.save(args.result_dir + filenames[batch][:-4] + '.png', img_as_ubyte(denoised_img))
+                cv2.imwrite(args.result_dir + filenames[batch][:-4] + '.png', img_as_ubyte(denoised_img))
                 
 
 psnr_val_raw = sum(psnr_val_raw)/len(psnr_val_raw)

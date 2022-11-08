@@ -9,7 +9,7 @@ import numpy as np
 import rawpy
 from glob import glob
 from tqdm import tqdm
-import lycon
+import cv2
 from natsort import natsorted
 import shutil
 
@@ -39,7 +39,7 @@ def raw2rgb(inp_path,out_path):
         print('Moving: ', filename[:-4]+'.dng')
         shutil.move(inp_path,'./corrupt/FinePixS2Pro/')
     else:
-        lycon.save(filepath,im)
+        cv2.imwrite(filepath,im)
 
 num_cores = multiprocessing.cpu_count()
 Parallel(n_jobs=num_cores)(delayed(raw2rgb)(path,output_dir) for path in tqdm(files))

@@ -19,7 +19,7 @@ import scipy.io as sio
 from networks.denoising_rgb import DenoiseNet
 from dataloaders.data_rgb import get_validation_data
 import utils
-import lycon
+import cv2
 from skimage import img_as_ubyte
 
 parser = argparse.ArgumentParser(description='RGB denoising evaluation on the validation set of SIDD')
@@ -75,7 +75,7 @@ with torch.no_grad():
         if args.save_images:
             for batch in range(len(rgb_gt)):
                 denoised_img = img_as_ubyte(rgb_restored[batch])
-                lycon.save(args.result_dir + filenames[batch][:-4] + '.png', denoised_img)
+                cv2.imwrite(args.result_dir + filenames[batch][:-4] + '.png', denoised_img)
             
 psnr_val_rgb = sum(psnr_val_rgb)/len(psnr_val_rgb)
 print("PSNR: %.2f " %(psnr_val_rgb))

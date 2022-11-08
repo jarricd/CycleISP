@@ -20,7 +20,7 @@ from networks.cycleisp import Rgb2Raw
 from dataloaders.data_rgb import get_rgb_data
 from utils.noise_sampling import random_noise_levels_dnd, random_noise_levels_sidd, add_noise
 import utils
-import lycon
+import cv2
 from skimage import img_as_ubyte
 
 parser = argparse.ArgumentParser(description='RGB2RAW Network: From clean RGB images, generate {RAW_clean, RAW_noisy} pairs')
@@ -80,13 +80,13 @@ with torch.no_grad():
             clean_packed = clean_packed[:,padh[j]//2:-padh[j]//2,padw[j]//2:-padw[j]//2]   ## RGGB channels  (4 x H/2 x W/2)
             clean_unpacked = utils.unpack_raw(clean_packed.unsqueeze(0))                   ## Rearrange RGGB channels into Bayer pattern
             clean_unpacked = clean_unpacked.squeeze().cpu().detach().numpy()
-            lycon.save(args.result_dir+'png/clean/'+filename[:-4]+'.png',img_as_ubyte(clean_unpacked))
+            cv2.imwrite(args.result_dir+'png/clean/'+filename[:-4]+'.png',img_as_ubyte(clean_unpacked))
 
             noisy_packed = raw_noisy
             noisy_packed = noisy_packed[:,padh[j]//2:-padh[j]//2,padw[j]//2:-padw[j]//2]   ## RGGB channels
             noisy_unpacked = utils.unpack_raw(noisy_packed.unsqueeze(0))                   ## Rearrange RGGB channels into Bayer pattern
             noisy_unpacked = noisy_unpacked.squeeze().cpu().detach().numpy()
-            lycon.save(args.result_dir+'png/noisy/'+filename[:-4]+'.png',img_as_ubyte(noisy_unpacked))
+            cv2.imwrite(args.result_dir+'png/noisy/'+filename[:-4]+'.png',img_as_ubyte(noisy_unpacked))
 
             variance_packed = variance[:,padh[j]//2:-padh[j]//2,padw[j]//2:-padw[j]//2]   ## RGGB channels
 

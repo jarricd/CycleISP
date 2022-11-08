@@ -21,7 +21,7 @@ import numpy as np
 from networks.denoising_raw import DenoiseNet
 
 import utils
-import lycon
+import cv2
 from utils.bundle_submissions import bundle_submissions_raw
 from skimage import img_as_ubyte
 
@@ -149,7 +149,7 @@ for i in tqdm(range(50)):
         if args.save_images:
             denoised_img = img_as_ubyte(Idenoised_crop)
             save_file = os.path.join(args.result_dir+ 'png/', '%04d_%02d.png' % (i + 1, k + 1))
-            lycon.save(save_file, denoised_img)
+            cv2.imwrite(save_file, denoised_img)
 
 bundle_submissions_raw(args.result_dir+'matfile/', 'raw_results_for_server_submission/')
 os.system("rm {}".format(args.result_dir+'matfile/*.mat'))
