@@ -43,19 +43,20 @@ utils.mkdir(args.result_dir+'clean')
 utils.mkdir(args.result_dir+'noisy')
 
 test_dataset = get_rgb_data(args.input_dir)
-test_loader = DataLoader(dataset=test_dataset, batch_size=4, shuffle=False, num_workers=2, drop_last=False)
+test_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False, drop_last=False)
 
 model_rgb2raw = Rgb2Raw()
 model_ccm     = CCM()
 model_raw2rgb = Raw2Rgb()
 
-utils.load_checkpoint(model_rgb2raw,args.weights_rgb2raw)
-utils.load_checkpoint(model_ccm,args.weights_ccm)
-utils.load_checkpoint(model_raw2rgb,args.weights_raw2rgb)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+utils.load_checkpoint(model_rgb2raw,args.weights_rgb2raw, device=device)
+utils.load_checkpoint(model_ccm,args.weights_ccm, device=device)
+utils.load_checkpoint(model_raw2rgb,args.weights_raw2rgb, device=device)
 
-model_rgb2raw.cuda()
-model_ccm.cuda()
-model_raw2rgb.cuda()
+model_rgb2raw.to(device)
+model_ccm.to(device)
+model_raw2rgb.to(device)
 
 model_rgb2raw = nn.DataParallel(model_rgb2raw)
 model_ccm = nn.DataParallel(model_ccm)
@@ -67,35 +68,31 @@ model_raw2rgb.eval()
 
 with torch.no_grad():
     for ii, data in enumerate(tqdm(test_loader), 0):
-        rgb_gt    = data[0].cuda()
+        rgb_gt = data[0].to(device)
         filenames = data[1]
-        padh = data[2]
-        padw = data[3]
 
         ## Convert clean rgb image to clean raw image
         raw_gt = model_rgb2raw(rgb_gt)       ## raw_gt is in RGGB format
         raw_gt = torch.clamp(raw_gt,0,1)
-        
+        pass
         ########## Add noise to clean raw images ##########
         for j in range(raw_gt.shape[0]):   ## Use loop to add different noise to different images.
             filename = filenames[j]
-            shot_noise, read_noise = random_noise_levels_dnd() 
-            shot_noise, read_noise = shot_noise.cuda(), read_noise.cuda()
-            raw_noisy = add_noise(raw_gt[j], shot_noise, read_noise, use_cuda=True)
+            shot_noise, read_noise = random_noise_levels_dnd()
+            shot_noise, read_noise = shot_noise.to(device), read_noise.to(device)
+            raw_noisy = add_noise(raw_gt[j], device, shot_noise, read_noise, use_cuda=True)
             raw_noisy = torch.clamp(raw_noisy,0,1)  ### CLIP NOISE
-            
+
             #### Convert raw noisy to rgb noisy ####
             ccm_tensor = model_ccm(rgb_gt[j].unsqueeze(0))
-            rgb_noisy = model_raw2rgb(raw_noisy.unsqueeze(0),ccm_tensor) 
+            rgb_noisy = model_raw2rgb(raw_noisy.unsqueeze(0),ccm_tensor)
             rgb_noisy = torch.clamp(rgb_noisy,0,1)
 
             rgb_noisy = rgb_noisy.permute(0, 2, 3, 1).squeeze().cpu().detach().numpy()
 
             rgb_clean = rgb_gt[j].permute(1,2,0).cpu().detach().numpy()
 
-            ## Unpadding
-            rgb_clean = rgb_clean[padh[j]:-padh[j],padw[j]:-padw[j],:]   
-            rgb_noisy = rgb_noisy[padh[j]:-padh[j],padw[j]:-padw[j],:]   
-
-            cv2.imwrite(args.result_dir+'clean/'+filename[:-4]+'.png',img_as_ubyte(rgb_clean))
-            cv2.imwrite(args.result_dir+'noisy/'+filename[:-4]+'.png',img_as_ubyte(rgb_noisy))
+            cv2.imwrite(args.result_dir+'clean/'+filename[:-4]+'.png',rgb_clean * 255)
+            cv2.imwrite(args.result_dir+'noisy/'+filename[:-4]+'.png',rgb_noisy * 255)
+            pass
+    pass

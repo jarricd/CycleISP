@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 import torch.nn as nn
 import torch
+
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
@@ -41,16 +42,15 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 utils.mkdir(args.result_dir+'pkl')
 utils.mkdir(args.result_dir+'png/clean')
 utils.mkdir(args.result_dir+'png/noisy')
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 test_dataset = get_rgb_data(args.input_dir)
 test_loader = DataLoader(dataset=test_dataset, batch_size=4, shuffle=False, num_workers=2, drop_last=False)
 
-model_rgb2raw = Rgb2Raw()
+model_rgb2raw = Rgb2Raw().to(device)
 
-utils.load_checkpoint(model_rgb2raw,args.weights)
+utils.load_checkpoint(model_rgb2raw, args.weights, device)
 print("===>Testing using weights: ", args.weights)
 
-model_rgb2raw.cuda()
 
 model_rgb2raw=nn.DataParallel(model_rgb2raw)
 
@@ -58,7 +58,7 @@ model_rgb2raw.eval()
 
 with torch.no_grad():
     for ii, data in enumerate(tqdm(test_loader), 0):
-        rgb_gt    = data[0].cuda()
+        rgb_gt    = data[0].to(device)
         filenames = data[1]
         padh = data[2]
         padw = data[3]
@@ -70,8 +70,9 @@ with torch.no_grad():
         for j in range(raw_gt.shape[0]):
             filename = filenames[j]
             shot_noise, read_noise = random_noise_levels_dnd() 
-            shot_noise, read_noise = shot_noise.cuda(), read_noise.cuda()
-            raw_noisy = add_noise(raw_gt[j], shot_noise, read_noise, use_cuda=True)
+            shot_noise, read_noise = shot_noise.to(device), read_noise.to(device)
+            use_cuda = True if device == "cuda" else False
+            raw_noisy = add_noise(raw_gt[j], shot_noise, read_noise, use_cuda=use_cuda)
             raw_noisy = torch.clamp(raw_noisy,0,1)  ### CLIP NOISE
             variance = shot_noise * raw_noisy + read_noise
 
@@ -80,14 +81,13 @@ with torch.no_grad():
             clean_packed = clean_packed[:,padh[j]//2:-padh[j]//2,padw[j]//2:-padw[j]//2]   ## RGGB channels  (4 x H/2 x W/2)
             clean_unpacked = utils.unpack_raw(clean_packed.unsqueeze(0))                   ## Rearrange RGGB channels into Bayer pattern
             clean_unpacked = clean_unpacked.squeeze().cpu().detach().numpy()
-            cv2.imwrite(args.result_dir+'png/clean/'+filename[:-4]+'.png',img_as_ubyte(clean_unpacked))
+            cv2.imwrite(args.result_dir+'png/clean/'+filename[:-4]+'.png', clean_unpacked)
 
             noisy_packed = raw_noisy
             noisy_packed = noisy_packed[:,padh[j]//2:-padh[j]//2,padw[j]//2:-padw[j]//2]   ## RGGB channels
             noisy_unpacked = utils.unpack_raw(noisy_packed.unsqueeze(0))                   ## Rearrange RGGB channels into Bayer pattern
             noisy_unpacked = noisy_unpacked.squeeze().cpu().detach().numpy()
-            cv2.imwrite(args.result_dir+'png/noisy/'+filename[:-4]+'.png',img_as_ubyte(noisy_unpacked))
-
+            cv2.imwrite(args.result_dir+'png/noisy/'+filename[:-4]+'.png', noisy_unpacked)
             variance_packed = variance[:,padh[j]//2:-padh[j]//2,padw[j]//2:-padw[j]//2]   ## RGGB channels
 
             dict_ = {}

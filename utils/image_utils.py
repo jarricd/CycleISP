@@ -4,7 +4,7 @@ from skimage.metrics.simple_metrics import peak_signal_noise_ratio
 import pickle
 import cv2
 from skimage.metrics import structural_similarity
-
+import logging
 
 def is_numpy_file(filename):
     return any(filename.endswith(extension) for extension in [".npy"])
@@ -37,7 +37,12 @@ def load_npy(filepath):
     return img
 
 def load_img(filepath):
-    img = cv2.imread(filepath)
+    try:
+        img = cv2.imread(filepath)
+    except AttributeError as e:
+        logging.error(msg:=f"Loaded image is a None! Check image {filepath} and try again.")
+        raise AttributeError from msg
+
     img = img.astype(np.float32)
     img = img/255.
     return img

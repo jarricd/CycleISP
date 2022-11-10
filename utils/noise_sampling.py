@@ -48,12 +48,12 @@ def random_noise_levels_sidd():
   return shot_noise, read_noise
 
 
-def add_noise(image, shot_noise=0.01, read_noise=0.0005, use_cuda=False):
+def add_noise(image, device, shot_noise=0.01, read_noise=0.0005, use_cuda=False):
   """Adds random shot (proportional to image) and read (independent) noise."""
   variance = image * shot_noise + read_noise
   mean = torch.Tensor([0.0])
   if use_cuda:
-    mean = mean.cuda()
+    mean = mean.to(device)
   distribution = dist.normal.Normal(mean, torch.sqrt(variance))
   noise = distribution.sample()
   return image + noise

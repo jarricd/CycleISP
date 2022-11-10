@@ -94,8 +94,6 @@ class DataLoader_NoisyData(Dataset):
         self.target_filenames = [os.path.join(rgb_dir, x) for x in rgb_files if is_png_file(x)]
         
         self.tar_size = len(self.target_filenames)  # get the size of target
-        self.blur, self.pad = get_gaussian_kernel(kernel_size=5, sigma=1)   ### preprocessing to remove noise from the input rgb image
-
     def __len__(self):
         return self.tar_size
 
@@ -111,12 +109,5 @@ class DataLoader_NoisyData(Dataset):
 
         target = torch.Tensor(target)
         target = target.permute(2,0,1)
-        
-        target = F.pad(target.unsqueeze(0), (self.pad, self.pad, self.pad, self.pad), mode='reflect')
-        target = self.blur(target).squeeze(0)
 
-        padh = (MAX_SIZE - target.shape[1])//2
-        padw = (MAX_SIZE - target.shape[2])//2
-        target = F.pad(target.unsqueeze(0), (padw, padw, padh, padh), mode='constant').squeeze(0)
-
-        return target, tar_filename, padh, padw
+        return target, tar_filename

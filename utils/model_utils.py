@@ -19,8 +19,8 @@ def save_checkpoint(model_dir, state, session):
     model_out_path = os.path.join(model_dir,"model_epoch_{}_{}.pth".format(epoch,session))
     torch.save(state, model_out_path)
 
-def load_checkpoint(model, weights):
-    checkpoint = torch.load(weights)
+def load_checkpoint(model, weights, device):
+    checkpoint = torch.load(weights, map_location=device)
     try:
         model.load_state_dict(checkpoint["state_dict"])
     except:
